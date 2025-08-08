@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Countdown Timers with Calendar</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#7dd3fc;--muted:#94a3b8;--glass:rgba(255,255,255,0.04)}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071029 0%, #071a2a 60%);color:#e6eef6}
+    .wrap{max-width:1200px;margin:32px auto;padding:24px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:6px 0 0;color:var(--muted)}
+    .flex{display:flex;gap:16px;flex-wrap:wrap}
+    .timers{display:flex;flex-direction:column;gap:16px;flex:2}
+    .card{background:var(--card);padding:18px;border-radius:10px;flex:1}
+    .countdown{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .unit{background:var(--glass);padding:14px;border-radius:8px;min-width:92px;text-align:center}
+    .unit .num{font-size:22px;font-weight:700}
+    .unit .lbl{font-size:12px;color:var(--muted);margin-top:6px}
+    .big{font-size:26px}
+    .target{color:var(--accent);font-weight:600}
+    .goals{background:var(--glass);padding:16px;border-radius:10px;flex:1;min-width:200px}
+    .goals h2{margin:0 0 12px;font-size:18px;color:var(--accent)}
+    .goals ul{margin:0;padding-left:20px}
+    .goals li{margin-bottom:6px;font-size:16px;font-weight:600}
+    .goals li span{font-size:20px;margin-right:6px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+    /* Calendar styles */
+    .calendar-wrap{background:var(--glass);padding:16px;border-radius:10px;margin-top:20px}
+    .calendar-header{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    select{padding:4px;border-radius:6px;border:1px solid var(--muted);background:var(--card);color:white}
+    table.calendar{width:100%;border-collapse:collapse;text-align:center}
+    table.calendar th{color:var(--accent);padding:6px 0}
+    table.calendar td{padding:6px 0;border-radius:6px}
+    table.calendar td.today{background:var(--accent);color:black;font-weight:bold}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Countdowns</h1>
+        <p class="lead">Live timers to keep track of your goals and milestones.</p>
+      </div>
+      <div id="nowStr" class="meta"></div>
+    </header>
+
+    <div class="flex">
+      <div class="timers">
+        <div class="card">
+          <div style="color:var(--muted);font-size:13px">Time remaining</div>
+          <div class="big">Until <strong class="target">01 Jan 2050</strong></div>
+          <div style="margin-top:16px" class="countdown" id="count2050"></div>
+        </div>
+
+        <div class="card">
+          <div style="color:var(--muted);font-size:13px">Time remaining</div>
+          <div class="big">Until <strong class="target">End of this year</strong></div>
+          <div style="margin-top:16px" class="countdown" id="countYear"></div>
+        </div>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+        <div class="goals">
+          <h2>Daily Focus</h2>
+          <ul>
+            <li><span>🛠</span> Make a big workshop</li>
+            <li><span>💪</span> Workout</li>
+            <li><span>📚</span> Teaching</li>
+          </ul>
+        </div>
+
+        <!-- Calendar -->
+        <div class="calendar-wrap">
+          <div class="calendar-header">
+            <select id="monthSelect"></select>
+            <select id="yearSelect"></select>
+          </div>
+          <table class="calendar" id="calendar"></table>
+        </div>
+      </div>
+    </div>
+
+    <footer>Made for you — countdown to your future. ⏳</footer>
+  </div>
+
+  <script>
+    function pad(n){return n.toString().padStart(2,'0')}
+
+    function renderCountdown(targetDate, elementId, showYears=true){
+      const now = new Date();
+      const diffMs = targetDate - now;
+      const totalSec = Math.max(0, Math.floor(diffMs/1000));
+
+      let yrs=0;
+      if(showYears){
+        yrs = targetDate.getFullYear() - now.getFullYear();
+        const nowMonthDay = now.getMonth()*100 + now.getDate();
+        const targetMonthDay = targetDate.getMonth()*100 + targetDate.getDate();
+        if(targetMonthDay < nowMonthDay) yrs -= 1;
+      }
+
+      const days = Math.floor(totalSec / 86400);
+      let rem = totalSec - days*86400;
+      const hrs = Math.floor(rem/3600); rem -= hrs*3600;
+      const mins = Math.floor(rem/60); const secs = rem - mins*60;
+
+      const container = document.getElementById(elementId);
+      container.innerHTML = '';
+      if(showYears) container.innerHTML += `<div class="unit"><div class="num">${yrs}</div><div class="lbl">Years</div></div>`;
+      container.innerHTML += `<div class="unit"><div class="num">${days}</div><div class="lbl">Days</div></div>`;
+      container.innerHTML += `<div class="unit"><div class="num">${pad(hrs)}</div><div class="lbl">Hours</div></div>`;
+      container.innerHTML += `<div class="unit"><div class="num">${pad(mins)}</div><div class="lbl">Minutes</div></div>`;
+      container.innerHTML += `<div class="unit"><div class="num">${pad(secs)}</div><div class="lbl">Seconds</div></div>`;
+    }
+
+    function updateNow(){
+      const now = new Date();
+      const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+      const indiaTime = new Intl.DateTimeFormat('en-GB', options).format(now);
+      document.getElementById('nowStr').textContent = 'Now (IST): ' + indiaTime;
+    }
+
+    function update(){
+      const target2050 = new Date(2050,0,1,0,0,0);
+      const endOfYear = new Date(new Date().getFullYear(), 11, 31, 23, 59, 59);
+      renderCountdown(target2050, 'count2050', true);
+      renderCountdown(endOfYear, 'countYear', false);
+      updateNow();
+    }
+
+    /* Calendar functions */
+    function generateCalendar(month, year){
+      const calendar = document.getElementById('calendar');
+      calendar.innerHTML = '';
+      const daysOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      let headerRow = '<tr>' + daysOfWeek.map(d => `<th>${d}</th>`).join('') + '</tr>';
+      calendar.innerHTML += headerRow;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      let date = 1;
+      for(let i=0;i<6;i++){
+        let row = '<tr>';
+        for(let j=0;j<7;j++){
+          if(i===0 && j<firstDay){
+            row += '<td></td>';
+          } else if(date > daysInMonth){
+            row += '<td></td>';
+          } else {
+            const today = new Date();
+            const isToday = date===today.getDate() && month===today.getMonth() && year===today.getFullYear();
+            row += `<td class="${isToday?'today':''}">${date}</td>`;
+            date++;
+          }
+        }
+        row += '</tr>';
+        calendar.innerHTML += row;
+      }
+    }
+
+    function initCalendar(){
+      const monthSelect = document.getElementById('monthSelect');
+      const yearSelect = document.getElementById('yearSelect');
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      months.forEach((m,i)=>{
+        let opt=document.createElement('option');
+        opt.value=i; opt.text=m;
+        monthSelect.add(opt);
+      });
+
+      const currentYear = new Date().getFullYear();
+      for(let y=currentYear-50; y<=currentYear+50; y++){
+        let opt=document.createElement('option');
+        opt.value=y; opt.text=y;
+        yearSelect.add(opt);
+      }
+
+      monthSelect.value = new Date().getMonth();
+      yearSelect.value = currentYear;
+
+      function refresh(){ generateCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value)); }
+      monthSelect.addEventListener('change', refresh);
+      yearSelect.addEventListener('change', refresh);
+
+      refresh();
+    }
+
+    update();
+    setInterval(update, 1000);
+    initCalendar();
+  </script>
+</body>
+</html>
